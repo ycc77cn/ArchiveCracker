@@ -21,6 +21,8 @@ HASHCAT_MODE_ZIP_AES = 13600       # ZIP AES-256 (WinZip) 模式
 HASHCAT_MODE_RAR3 = 12500          # RAR3-hp 模式
 HASHCAT_MODE_RAR5 = 13000          # RAR5 模式
 HASHCAT_MODE_7Z = 11600            # 7-Zip 模式
+HASHCAT_MODE_PKZIP = 17225         # 传统 ZipCrypto 加密(PKZIP Mixed Multi-File)模式
+                                   # 新版 zip2john 对传统加密输出 $pkzip$ 前缀，对应此 mode
 
 
 @dataclass

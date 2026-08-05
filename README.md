@@ -1,6 +1,8 @@
 # ArchiveCracker 压缩包密码爆破工具
 
-ArchiveCracker 是一个基于 Textual 的终端（TUI）压缩包密码爆破工具，内置 Hashcat 引擎，支持 GPU/CPU 加速，面向 ZIP / RAR / 7Z 等常见压缩包格式。
+>  ArchiveCracker 是一个基于 Textual 的终端（TUI）压缩包密码爆破工具，内置 Hashcat 引擎，支持 GPU/CPU 加速，面向 ZIP / RAR / 7Z 等常见压缩包格式。
+
+> 测试阶段,5060 8G 显卡, 14600KF, 开启GPU加速,3亿密码.所需时间约48秒
 
 ## 功能特性
 

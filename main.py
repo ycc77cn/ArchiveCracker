@@ -405,7 +405,7 @@ if _TEXTUAL_AVAILABLE:
     _HELP_ABOUT = [
         ("section", "软件名称"),
         ("raw", "ArchiveCracker 压缩包密码爆破工具"),
-        ("raw", "版本 V 0.1"),
+        ("raw", "版本 V 0.2"),
         ("blank",),
         ("section", "软件简介"),
         ("raw", "面向压缩包密码恢复的批量验证工具"),
@@ -1096,7 +1096,7 @@ if _TEXTUAL_AVAILABLE:
               3. 设备信息          |
               4. 工具自检          |
             [--------------------------------------------------------------]
-            当前版本：V 0.1    CPU:8.7%  GPU:16%  内存:14.7/31G(46%)
+            当前版本：V 0.2    CPU:8.7%  GPU:16%  内存:14.7/31G(46%)
         """
 
         TITLE = "ArchiveCracker"
@@ -3189,11 +3189,17 @@ if _TEXTUAL_AVAILABLE:
             if min_len < 1 or max_len < min_len:
                 raise ValueError("长度范围不合法")
 
+            # 自定义字符集用 hex 表达 + --hex-charset，规避 hashcat 掩码语法冲突
+            # 原因:字符集中含 ? 时(如特殊字符集 !@#$%^&*...?/),hashcat 会把 ?x 当作
+            #      内置字符集标记解析,报 "Syntax error in mask" 导致破解直接失败;
+            #      hex 编码后 ?(0x3f) 等字符不再触发掩码解析器,已验证兼容所有特殊字符。
+            charset_hex = charset.encode("utf-8").hex()
             extra_args = [
+                "--hex-charset",
                 "--increment",
                 "--increment-min", str(min_len),
                 "--increment-max", str(max_len),
-                f"--custom-charset1={charset}",
+                f"--custom-charset1={charset_hex}",
             ]
             return CrackConfig(
                 hash_file_path="", hashcat_mode=0,
@@ -4605,7 +4611,7 @@ if _TEXTUAL_AVAILABLE:
                 else:
                     vram_part = ""
                 stats_line = (
-                    f"当前版本：[{C_NS_GRAY}]V 0.1[/]    "
+                    f"当前版本：[{C_NS_GRAY}]V 0.2[/]    "
                     f"CPU使用率:[{C_NS_PURPLE}]{stats.cpu_percent:.1f}%[/]    "
                     f"GPU使用率:[{C_NS_GREEN}]{stats.gpu_percent:.0f}%[/]"
                     f"{vram_part}    "
@@ -4615,7 +4621,7 @@ if _TEXTUAL_AVAILABLE:
                 )
             except Exception:  # noqa: BLE001
                 stats_line = (
-                    f"当前版本：[{C_NS_GRAY}]V 0.1[/]    "
+                    f"当前版本：[{C_NS_GRAY}]V 0.2[/]    "
                     f"CPU使用率:--    GPU使用率:--    内存使用率:--"
                 )
             # 快捷键提示：始终可见，超宽时按显示宽度截断，避免撑乱布局

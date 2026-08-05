@@ -360,14 +360,18 @@ class HashcatExecutor:
                     }
                     if val in status_map:
                         progress.status = status_map[val]
-                        # 关键修复:终态(Cracked/Exhausted/Error/Stopped/Quit/Aborted)时
-                        # 立即终止 hashcat 进程并退出循环
-                        # 原因:hashcat --status 模式下,即使进入终态进程也不会自动退出,
-                        #       会继续每2秒输出状态,导致 stdout 循环永远阻塞,
-                        #       worker 线程卡死,_crack_dict_running 永远为 True
-                        # 注:密码从 potfile 兜底读取(_merge_potfile),不依赖 stdout 密码行
-                        if val in ("Cracked", "Exhausted", "Error",
-                                   "Stopped", "Quit", "Aborted"):
+                        # 终态处理(关键修复):
+                        # - Cracked/Error/Stopped/Quit/Aborted:hashcat --status 模式下
+                        #   进程不会自动退出,必须立即 terminate 并退出循环
+                        # - Exhausted:不能立即终止!暴力穷举/掩码使用 --increment 增量时,
+                        #   hashcat 每完成一个长度段就输出一次 "Status: Exhausted"
+                        #   (如 Guess.Queue 1/2),这是"阶段结束"而非"任务结束";
+                        #   只有全部段试完后 hashcat 才会自动退出(return 1),
+                        #   stdout 自然 EOF,循环随之结束。
+                        #   此前把每次 Exhausted 都当终态,导致增量模式永远只试第一段
+                        #   就提前终止,暴力穷举形同不可用(实测仅 36 个候选即结束)。
+                        if val in ("Cracked", "Error", "Stopped",
+                                   "Quit", "Aborted"):
                             try:
                                 self._proc.terminate()
                             except Exception:  # noqa: BLE001

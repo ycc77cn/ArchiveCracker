@@ -23,7 +23,10 @@ from typing import Optional
 # 兼容两种运行方式：作为 core 包 import 或直接 python core/xxx.py 调试
 try:
     from .archive_detector import ArchiveDetector, ArchiveType
-    from .path_manager import PathManager, ToolPaths, HASHCAT_MODE_ZIP_AES, HASHCAT_MODE_RAR3, HASHCAT_MODE_RAR5, HASHCAT_MODE_7Z
+    from .path_manager import (PathManager, ToolPaths,
+                               HASHCAT_MODE_ZIP_AES, HASHCAT_MODE_RAR3,
+                               HASHCAT_MODE_RAR5, HASHCAT_MODE_7Z,
+                               HASHCAT_MODE_PKZIP)
 except ImportError:  # pragma: no cover
     import sys as _sys
     from pathlib import Path as _Path
@@ -32,6 +35,7 @@ except ImportError:  # pragma: no cover
     from core.path_manager import (  # type: ignore[no-redef]
         PathManager, ToolPaths,
         HASHCAT_MODE_ZIP_AES, HASHCAT_MODE_RAR3, HASHCAT_MODE_RAR5, HASHCAT_MODE_7Z,
+        HASHCAT_MODE_PKZIP,
     )
 
 
@@ -123,8 +127,10 @@ class HashExtractor:
     def _extract_zip(self, archive_file: Path) -> ExtractResult:
         """
         ZIP 哈希提取：调用 John 官方 zip2john 子进程
-        zip2john.exe 输出形如： <文件名>:$zip2$*0*1*0*...
+        zip2john 输出形如： <文件名>:$zip2$*0*1*0*... 或 $pkzip$1*1*2*0*...
         我们取冒号之后的部分作为 Hashcat 标准哈希。
+        新版 zip2john(jumbo) 对传统 ZipCrypto 加密输出 $pkzip$ 前缀(对应 mode 17225)，
+        对 WinZip AES 输出 $zip2$/$zip3$ 前缀(对应 mode 13600)，需按前缀自适应映射。
         """
         tool = self.tool_paths.zip2john
         if not tool:
@@ -132,7 +138,7 @@ class HashExtractor:
 
         try:
             # zip2john 输出编码不稳定(中文 Windows 可能 UTF-8 也可能 GBK),
-            # 用 bytes 捕获后先尝试 UTF-8 解码,失败则 GBK 兜底,确保 $zip2$ 前缀不丢失
+            # 用 bytes 捕获后先尝试 UTF-8 解码,失败则 GBK 兜底,确保 $前缀 不丢失
             completed = subprocess.run(
                 [tool, str(archive_file)],
                 capture_output=True, timeout=30,
@@ -142,7 +148,8 @@ class HashExtractor:
                 out = out_bytes.decode("utf-8")
             except UnicodeDecodeError:
                 out = out_bytes.decode("gbk", errors="replace")
-            hash_line = self._pick_hash_line(out, ("$zip2$",))
+            # 兼容三种前缀:$zip2$/$zip3$(WinZip AES)/$pkzip$(传统 ZipCrypto)
+            hash_line = self._pick_hash_line(out, ("$zip2$", "$zip3$", "$pkzip$"))
             if not hash_line:
                 return ExtractResult(
                     success=False, archive_type=ArchiveType.ZIP,
@@ -150,9 +157,15 @@ class HashExtractor:
                     hash_string=None, hash_file_path=None,
                     error_message=f"zip2john 未输出有效 hash (返回码={completed.returncode}), 原始输出:\n{out[-500:]}",
                 )
-            # _pick_hash_line 已返回纯 hash(含 $zip2$ 前缀),不再额外 split
+            # _pick_hash_line 已返回纯 hash(含 $前缀),不再额外 split
             hash_str = hash_line.strip()
-            return self._wrap_success(ArchiveType.ZIP, HASHCAT_MODE_ZIP_AES, hash_str, archive_file)
+            # 根据 hash 前缀自适应选择 hashcat mode
+            upper = hash_str.upper()
+            if upper.startswith("$PKZIP$"):
+                mode = HASHCAT_MODE_PKZIP
+            else:
+                mode = HASHCAT_MODE_ZIP_AES
+            return self._wrap_success(ArchiveType.ZIP, mode, hash_str, archive_file)
         except subprocess.TimeoutExpired:
             return self._timeout_error(ArchiveType.ZIP, HASHCAT_MODE_ZIP_AES)
         except Exception as exc:  # noqa: BLE001 — 统一包装异常
