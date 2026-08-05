@@ -59,7 +59,8 @@
 ## 安装
 
 ```powershell
-cd F:\压缩包密码批量验证
+git clone https://github.com/ycc77cn/ArchiveCracker
+cd ArchiveCracker
 pip install textual rich psutil
 ```
 
