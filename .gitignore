@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+build/
+dist/
+bin/
+data/output/
+*.log
+.trae/
+.idea/
+.vscode/
+*.spec
