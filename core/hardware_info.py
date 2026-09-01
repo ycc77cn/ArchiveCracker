@@ -272,7 +272,9 @@ def _collect_disk_to_drive_map() -> dict[int, list[str]]:
         disk_idx = part_to_disk.get(part_id)
         if disk_idx is None:
             continue
-        result.setdefault(disk_idx, []).append(drive_letter)
+        # 同一盘符可能被 WMI 关联查询返回多次（如扩展分区/动态卷），需去重
+        if drive_letter not in result.setdefault(disk_idx, []):
+            result[disk_idx].append(drive_letter)
 
     # 盘符按字母排序
     for k in result:
@@ -546,6 +548,7 @@ def format_report_text(report: HardwareReport, width: int = 60) -> str:
                 indent=2,
             ))
             # 该磁盘下每个盘符一行：盘符  已用GB/总容量GB
+            # kw=10 使值列与磁盘标题行对齐：indent4+kw10+1 = 2+kw12+1 = 15
             if disk.partitions:
                 for part in disk.partitions:
                     used_gb = part.total_gb - part.free_gb
@@ -553,10 +556,10 @@ def format_report_text(report: HardwareReport, width: int = 60) -> str:
                         part.letter,
                         f"{used_gb:.1f}GB/{part.total_gb:.1f}GB",
                         indent=4,
-                        kw=8,
+                        kw=10,
                     ))
             else:
-                lines.append(_kv("-", "无分区", indent=4, kw=8))
+                lines.append(_kv("-", "无分区", indent=4, kw=10))
     else:
         lines.append(_kv("磁盘", "未检测到", indent=2))
 

@@ -57,11 +57,12 @@ class PathManager:
         if project_root:
             self.project_root = Path(project_root).resolve()
         else:
-            # 打包运行时优先使用 PyInstaller 的资源根目录(_internal)，
+            # 打包运行时优先使用 exe 所在目录（外置 bin 同级），
             # 开发运行时取当前文件的上上级目录（core/path_manager.py -> 上两级）
-            self.project_root = Path(
-                getattr(sys, "_MEIPASS", Path(__file__).resolve().parent.parent)
-            )
+            if getattr(sys, "frozen", False):
+                self.project_root = Path(sys.executable).resolve().parent
+            else:
+                self.project_root = Path(__file__).resolve().parent.parent
         self.bin_root = self.project_root / "bin"
 
     def _detect_platform_dir(self) -> Optional[str]:
