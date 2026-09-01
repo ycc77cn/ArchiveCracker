@@ -1,13 +1,4 @@
----
-AIGC:
-  ContentProducer: '001191110102MAD55U9H0F10002'
-  ContentPropagator: '001191110102MAD55U9H0F10002'
-  Label: '1'
-  ProduceID: '36005184-b6bf-45c5-9af8-b3b97daba78e'
-  PropagateID: '36005184-b6bf-45c5-9af8-b3b97daba78e'
-  ReservedCode1: '433ac381-1c54-47e5-9adc-9790a7e1ddd6'
-  ReservedCode2: '433ac381-1c54-47e5-9adc-9790a7e1ddd6'
----
+
 
 # ArchiveCracker 压缩包密码爆破工具 V 0.3
 
@@ -330,5 +321,3 @@ TUI 版：部分 PowerShell 环境下方向键无法可靠送达，请使用 W/S
 ## 开源协议
 
 项目开源，具体开源协议以仓库内 LICENSE 文件为准。
-
-> AI生成
